@@ -532,6 +532,68 @@
         .btn-again { background: #667eea; color: white; }
         .btn-home  { background: white; color: #2d3436; }
 
+        /* ── BUILD A SENTENCE ───────────────────── */
+        #screen-build {
+            background: linear-gradient(145deg, #f9ca24 0%, #f0932b 100%);
+        }
+
+        .build-word-card {
+            background: white;
+            border-radius: 26px;
+            padding: 18px 20px;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            box-shadow: var(--shadow); flex-shrink: 0;
+        }
+        .build-emoji   { font-size: 64px; line-height: 1; }
+        .build-english { font-size: 20px; font-weight: 700; color: #636e72; }
+
+        .build-slots {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            justify-content: center; align-items: center;
+            min-height: 66px; flex-shrink: 0;
+            padding: 4px 0;
+        }
+
+        .build-slot {
+            min-width: 72px; height: 58px;
+            border-radius: 14px;
+            border: 3px dashed rgba(0,0,0,0.18);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 19px; font-weight: 900;
+            background: rgba(255,255,255,0.35);
+            color: #2d3436; padding: 0 12px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .build-slot.filled {
+            border-style: solid; border-color: var(--correct);
+            background: #d4edda;
+            animation: pop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+
+        .build-hint {
+            text-align: center; font-size: 16px; font-weight: 700;
+            color: rgba(0,0,0,0.35); flex-shrink: 0;
+        }
+
+        .build-tiles {
+            display: flex; flex-wrap: wrap; gap: 10px;
+            justify-content: center; align-content: flex-start;
+            flex: 1; padding-bottom: 10px;
+        }
+
+        .build-tile {
+            padding: 16px 24px;
+            border-radius: 20px;
+            background: white; border: none; cursor: pointer;
+            font-size: 22px; font-weight: 900; color: #2d3436;
+            font-family: var(--font);
+            box-shadow: 0 5px 16px rgba(0,0,0,0.13);
+            transition: transform 0.12s, opacity 0.15s;
+        }
+        .build-tile:active { transform: scale(0.91); }
+        .build-tile.wrong  { animation: shake 0.35s ease; }
+        .build-tile.gone   { opacity: 0; pointer-events: none; width: 0; padding: 0; margin: 0; overflow: hidden; }
+
         /* ══════════════════════════════════════════
            PROGRESS SCREEN
         ══════════════════════════════════════════ */
@@ -861,7 +923,38 @@
                 </div>
                 <span class="game-opt-arrow">▶</span>
             </div>
+            <div class="game-opt" onclick="startBuildSentence()">
+                <span class="game-opt-icon">🧩</span>
+                <div>
+                    <div class="game-opt-title">Build a Sentence</div>
+                    <div class="game-opt-desc">Tap the word tiles in the right order!</div>
+                </div>
+                <span class="game-opt-arrow">▶</span>
+            </div>
         </div>
+    </div>
+
+    <!-- ═══════════════════ BUILD A SENTENCE ═══════════════════ -->
+    <div class="screen hidden" id="screen-build">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('game-select')">←</button>
+            <div class="pill-badge">✅ <span id="build-correct-count">0</span></div>
+        </div>
+        <div class="quiz-header-row">
+            <div class="score-pill">⭐ <span id="build-stars">0</span></div>
+            <div class="score-pill">📊 Q<span id="build-q-num">1</span>/<span id="build-q-total">8</span></div>
+        </div>
+        <div class="build-word-card">
+            <div class="build-emoji"   id="build-emoji">🐕</div>
+            <div class="build-english" id="build-english">dog</div>
+            <button class="speaker-btn" onclick="speakBuildWord()" style="margin-top:4px">🔊</button>
+        </div>
+        <div style="text-align:center;font-size:15px;font-weight:700;color:rgba(0,0,0,0.3);margin:10px 0 4px;">
+            Build the Danish sentence ↓
+        </div>
+        <div class="build-slots" id="build-slots"></div>
+        <div class="build-hint">Tap the tiles in the correct order!</div>
+        <div class="build-tiles" id="build-tiles"></div>
     </div>
 
     <!-- ═══════════════════ REPEAT (SAY IT) ═══════════════════ -->
@@ -1216,6 +1309,10 @@ const state = {
 
     trWords: [], trIdx: 0, trWord: null,
     trCorrect: 0, trStars: 0, trAnswered: false,
+
+    buildWords: [], buildIdx: 0, buildWord: null,
+    buildSentence: [], buildTileOrder: [], buildTileUsed: [],
+    buildPlaced: 0, buildCorrect: 0, buildStars: 0,
 
     stars: {},
 };
@@ -1737,6 +1834,124 @@ function flipMem(i) {
 }
 
 /* ══════════════════════════════════════════════
+   BUILD A SENTENCE
+══════════════════════════════════════════════ */
+
+// Words to prepend for single-word entries to form a short sentence
+const CATEGORY_FRAMES = {
+    animals:    ['Det','er','en'],
+    colors:     ['Den','er'],
+    numbers:    ['Det','er'],
+    food:       ['Jeg','spiser'],
+    family:     ['Det','er'],
+    body:       ['Det','er'],
+    house:      ['Her','er','en'],
+    playground: ['Jeg','vil'],
+    feelings:   ['Jeg','er'],
+    phrases:    ['Jeg','siger'],
+    questions:  [],
+};
+
+const BUILD_LEN = 8;
+
+function startBuildSentence() {
+    const words = VOCAB[state.category];
+    state.buildWords   = shuffle([...words]).slice(0, Math.min(BUILD_LEN, words.length));
+    state.buildIdx     = 0;
+    state.buildCorrect = 0;
+    state.buildStars   = 0;
+    state.mode         = 'build';
+    showScreen('build');
+    nextBuild();
+}
+
+function nextBuild() {
+    if (state.buildIdx >= state.buildWords.length) { showGameResult('build'); return; }
+
+    const word = state.buildWords[state.buildIdx];
+    state.buildWord = word;
+
+    // Build the sentence: use frame for single-word entries
+    const rawParts = word.danish.trim().split(/\s+/);
+    const frame    = rawParts.length === 1 ? (CATEGORY_FRAMES[state.category] || ['Det','er']) : [];
+    state.buildSentence = [...frame, ...rawParts];
+
+    // Shuffle tile positions
+    const n = state.buildSentence.length;
+    state.buildTileOrder = shuffle(Array.from({length: n}, (_, i) => i));
+    state.buildTileUsed  = new Array(n).fill(false);
+    state.buildPlaced    = 0;
+
+    document.getElementById('build-correct-count').textContent = state.buildCorrect;
+    document.getElementById('build-stars').textContent         = state.buildStars;
+    document.getElementById('build-q-num').textContent         = state.buildIdx + 1;
+    document.getElementById('build-q-total').textContent       = state.buildWords.length;
+    document.getElementById('build-emoji').textContent         = word.emoji;
+    document.getElementById('build-english').textContent       = word.english;
+
+    renderBuildSlots();
+    renderBuildTiles();
+    setTimeout(() => speak(word.danish), 450);
+}
+
+function renderBuildSlots() {
+    document.getElementById('build-slots').innerHTML =
+        state.buildSentence.map((w, i) => {
+            const filled = i < state.buildPlaced;
+            return `<div class="build-slot ${filled ? 'filled' : ''}" id="bslot${i}">${filled ? w : ''}</div>`;
+        }).join('');
+}
+
+function renderBuildTiles() {
+    document.getElementById('build-tiles').innerHTML =
+        state.buildTileOrder.map((sentIdx, tilePos) => {
+            if (state.buildTileUsed[tilePos]) return '';
+            const word = state.buildSentence[sentIdx];
+            return `<button class="build-tile" id="btile${tilePos}" onclick="tapBuildTile(${tilePos})">${word}</button>`;
+        }).join('');
+}
+
+function tapBuildTile(tilePos) {
+    const sentIdx = state.buildTileOrder[tilePos];
+    const tapped  = state.buildSentence[sentIdx];
+    const expected = state.buildSentence[state.buildPlaced];
+
+    if (tapped === expected) {
+        sfxCorrect();
+        state.buildTileUsed[tilePos] = true;
+
+        // Fill the slot
+        const slot = document.getElementById('bslot' + state.buildPlaced);
+        if (slot) { slot.textContent = tapped; slot.classList.add('filled'); }
+        state.buildPlaced++;
+
+        // Fade and remove tile
+        const tile = document.getElementById('btile' + tilePos);
+        if (tile) { tile.classList.add('gone'); setTimeout(() => tile.remove(), 160); }
+
+        if (state.buildPlaced === state.buildSentence.length) {
+            // Sentence complete!
+            state.buildCorrect++;
+            state.buildStars++;
+            document.getElementById('build-correct-count').textContent = state.buildCorrect;
+            document.getElementById('build-stars').textContent         = state.buildStars;
+            addStars(state.category, 1);
+            sfxLevelUp();
+            showConfetti();
+            speak(state.buildWord.danish);
+            setTimeout(() => { state.buildIdx++; nextBuild(); }, 1600);
+        }
+    } else {
+        // Wrong tile
+        sfxWrong();
+        const tile = document.getElementById('btile' + tilePos);
+        if (tile) { tile.classList.add('wrong'); setTimeout(() => tile.classList.remove('wrong'), 380); }
+    }
+}
+
+function speakBuildWord() { speak(state.buildWord.danish); }
+
+/* ══════════════════════════════════════════════
    REPEAT (SAY IT) MODE
 ══════════════════════════════════════════════ */
 
@@ -1875,6 +2090,12 @@ function showGameResult(gameType) {
     } else if (gameType === 'repeat') {
         trophy='🌟'; title='Well said!'; starsEarned=2;
         scoreText = `${state.repWords.length} sentences practised`;
+    } else if (gameType === 'build') {
+        const pct = state.buildCorrect / state.buildWords.length;
+        if      (pct === 1) { trophy='🏆'; title='Perfect builder!'; starsEarned=3; }
+        else if (pct >= 0.7){ trophy='🥇'; title='Great job!';       starsEarned=2; }
+        else                { trophy='💪'; title='Keep building!';   starsEarned=1; }
+        scoreText = `${state.buildCorrect} / ${state.buildWords.length} sentences built`;
     } else {
         // memory
         const ratio = (state.memPairs * 2) / state.memMoves;
@@ -1903,6 +2124,7 @@ function restartGame() {
     else if (state.mode === 'spelling')  startSpelling();
     else if (state.mode === 'repeat')    startRepeat();
     else if (state.mode === 'translate') startTranslateQuiz();
+    else if (state.mode === 'build')     startBuildSentence();
     else    showScreen('game-select');
 }
 
