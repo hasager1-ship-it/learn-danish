@@ -1,0 +1,2281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Lær Dansk! 🇩🇰</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0; padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        :root {
+            --correct: #00b894;
+            --wrong:   #d63031;
+            --shadow:  0 8px 32px rgba(0,0,0,0.15);
+            --shadow-sm: 0 4px 16px rgba(0,0,0,0.12);
+            --radius:  24px;
+            --font:    'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        html, body {
+            height: 100%; overflow: hidden;
+            font-family: var(--font);
+            background: #667eea;
+            font-size: 18px;
+        }
+
+        #app { width: 100%; height: 100%; position: relative; overflow: hidden; }
+
+        /* ── SCREENS ── */
+        .screen {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            padding: 16px 16px 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.4,0,0.2,1);
+        }
+        .screen.hidden { opacity: 0; transform: translateX(60px); pointer-events: none; }
+
+        /* ── HEADER ── */
+        .screen-header {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px; flex-shrink: 0;
+            gap: 10px;
+        }
+
+        .back-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 12px 18px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.28);
+            border: none; cursor: pointer;
+            font-size: 18px; font-weight: 900;
+            color: white;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: transform 0.12s, background 0.12s;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .back-btn:active { transform: scale(0.88); background: rgba(255,255,255,0.45); }
+
+        .pill-badge {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.22);
+            border-radius: 30px; padding: 10px 18px;
+            color: white; font-size: 20px; font-weight: 800;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            white-space: nowrap;
+        }
+
+        .screen-title {
+            color: white; font-size: 26px; font-weight: 900;
+            text-align: center;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            flex: 1;
+        }
+
+        /* ── SHARED BUTTONS ── */
+        .btn {
+            border: none; cursor: pointer;
+            font-family: var(--font); font-weight: 800;
+            border-radius: var(--radius);
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .btn:active { transform: scale(0.94); }
+
+        /* ── INSTRUCTION BANNER ── */
+        .how-to {
+            background: rgba(255,255,255,0.22);
+            border-radius: 18px; padding: 12px 18px;
+            text-align: center; color: white;
+            font-size: 17px; font-weight: 700;
+            margin-bottom: 12px; flex-shrink: 0;
+            backdrop-filter: blur(6px);
+        }
+
+        /* ══════════════════════════════════════════
+           HOME SCREEN
+        ══════════════════════════════════════════ */
+        #screen-home {
+            background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            text-align: center;
+            padding: 24px 20px;
+        }
+
+        /* floating stars background */
+        #screen-home::before {
+            content: '⭐ 🌟 ✨ ⭐ 🌟';
+            position: absolute; top: 0; left: 0; right: 0;
+            font-size: 22px; letter-spacing: 32px;
+            opacity: 0.18; pointer-events: none;
+            padding: 16px 0;
+            white-space: nowrap; overflow: hidden;
+        }
+
+        .home-top-row {
+            position: absolute; top: 18px;
+            left: 0; right: 0;
+            display: flex; justify-content: space-between;
+            align-items: center; padding: 0 18px;
+        }
+
+        .home-stars-pill {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.22);
+            border-radius: 30px; padding: 10px 16px;
+            color: white; font-size: 18px; font-weight: 800;
+            backdrop-filter: blur(8px);
+        }
+
+        .level-badge {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.22);
+            border-radius: 30px; padding: 10px 16px;
+            color: white; font-size: 16px; font-weight: 800;
+            backdrop-filter: blur(8px);
+        }
+
+        .home-mascot {
+            font-size: 108px;
+            animation: float 3.2s ease-in-out infinite;
+            line-height: 1;
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.2));
+        }
+        @keyframes float {
+            0%,100% { transform: translateY(0) rotate(-2deg); }
+            50%      { transform: translateY(-16px) rotate(2deg); }
+        }
+
+        .mascot-name {
+            font-size: 18px; font-weight: 800;
+            color: rgba(255,255,255,0.85);
+            margin-top: -10px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .home-title {
+            color: white; font-size: 48px; font-weight: 900;
+            line-height: 1.05; text-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .home-subtitle {
+            color: rgba(255,255,255,0.85);
+            font-size: 20px; font-weight: 700;
+        }
+
+        .streak-badge {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.18);
+            border-radius: 50px; padding: 8px 20px;
+            color: white; font-size: 17px; font-weight: 800;
+        }
+
+        .home-btns {
+            display: flex; flex-direction: column;
+            gap: 14px; width: 100%; max-width: 420px;
+        }
+
+        .home-btn {
+            padding: 22px 28px; border-radius: 24px;
+            font-size: 22px; font-weight: 900;
+            border: none; cursor: pointer;
+            display: flex; align-items: center; gap: 14px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+            transition: transform 0.12s, box-shadow 0.12s;
+            font-family: var(--font); text-align: left;
+        }
+        .home-btn:active { transform: scale(0.96) translateY(2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .home-btn .icon { font-size: 36px; }
+        .home-btn .btn-label { display: flex; flex-direction: column; }
+        .home-btn .btn-sub { font-size: 14px; font-weight: 700; opacity: 0.75; margin-top: 2px; }
+
+        .btn-learn  { background: #FFE66D; color: #2d3436; }
+        .btn-play   { background: #FF6B6B; color: #fff; }
+        .btn-stars  { background: #4ECDC4; color: #fff; }
+
+        /* ══════════════════════════════════════════
+           CATEGORIES SCREEN
+        ══════════════════════════════════════════ */
+        #screen-categories {
+            background: linear-gradient(145deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px; flex: 1;
+            align-content: start; padding-bottom: 10px;
+        }
+
+        .cat-card {
+            background: white; border-radius: 22px;
+            padding: 18px 10px;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            transition: transform 0.14s, box-shadow 0.14s;
+            border-top: 7px solid var(--cat-color, #667eea);
+        }
+        .cat-card:active { transform: scale(0.92); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .cat-emoji  { font-size: 52px; line-height: 1; }
+        .cat-name   { font-size: 17px; font-weight: 900; color: #2d3436; text-align: center; }
+        .cat-danish { font-size: 13px; font-weight: 700; color: #636e72; }
+        .cat-star-row { font-size: 15px; letter-spacing: 1px; }
+        .cat-count  { font-size: 12px; color: #b2bec3; font-weight: 700; }
+
+        /* ══════════════════════════════════════════
+           GAME SELECT SCREEN
+        ══════════════════════════════════════════ */
+        #screen-game-select {
+            background: linear-gradient(145deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .game-opts {
+            display: flex; flex-direction: column;
+            gap: 12px; flex: 1;
+            justify-content: flex-start;
+            padding-bottom: 16px;
+        }
+
+        .game-opt {
+            background: white; border-radius: 24px;
+            padding: 20px 22px;
+            display: flex; align-items: center; gap: 16px;
+            cursor: pointer; box-shadow: var(--shadow);
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .game-opt:active { transform: scale(0.96); box-shadow: var(--shadow-sm); }
+        .game-opt-icon  { font-size: 52px; flex-shrink: 0; }
+        .game-opt-title { font-size: 22px; font-weight: 900; color: #2d3436; }
+        .game-opt-desc  { font-size: 14px; font-weight: 700; color: #636e72; margin-top: 3px; }
+        .game-opt-arrow { font-size: 22px; color: #b2bec3; margin-left: auto; flex-shrink: 0; }
+
+        /* ══════════════════════════════════════════
+           LEARN (FLASHCARD) SCREEN
+        ══════════════════════════════════════════ */
+        #screen-learn {
+            background: linear-gradient(145deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .progress-bar {
+            height: 16px; background: rgba(255,255,255,0.4);
+            border-radius: 12px; overflow: hidden;
+            margin-bottom: 14px; flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+            border-radius: 12px; transition: width 0.4s ease;
+        }
+
+        .flash-card {
+            flex: 1; background: white;
+            border-radius: 32px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 12px; padding: 28px;
+            box-shadow: var(--shadow); cursor: pointer;
+            transition: box-shadow 0.2s, transform 0.12s;
+            min-height: 0;
+        }
+        .flash-card:active { transform: scale(0.98); }
+        .flash-card.speaking { box-shadow: 0 0 0 6px #667eea, var(--shadow); }
+
+        .flash-emoji  { font-size: 100px; line-height: 1; }
+        .flash-danish { font-size: 54px; font-weight: 900; color: #2d3436; text-align: center; line-height: 1.1; }
+        .flash-en     { font-size: 24px; font-weight: 700; color: #636e72; text-align: center; }
+        .flash-tap-hint { font-size: 16px; font-weight: 700; color: #b2bec3; margin-top: -4px; }
+
+        .speaker-btn {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none; cursor: pointer; font-size: 30px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+            transition: transform 0.12s;
+        }
+        .speaker-btn:active { transform: scale(0.86); }
+
+        .flash-nav {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            margin-top: 14px; flex-shrink: 0;
+            gap: 12px;
+        }
+
+        .nav-btn {
+            flex: 1; height: 72px;
+            border-radius: 22px; background: white;
+            border: none; cursor: pointer; font-size: 26px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: var(--shadow);
+            transition: transform 0.12s;
+            font-family: var(--font); font-weight: 800; color: #2d3436;
+        }
+        .nav-btn:active { transform: scale(0.92); }
+        .nav-btn.next-btn { background: #667eea; color: white; font-size: 20px; }
+
+        .flash-counter {
+            font-size: 20px; font-weight: 800; color: white;
+            min-width: 70px; text-align: center;
+        }
+
+        /* ══════════════════════════════════════════
+           QUIZ SCREEN
+        ══════════════════════════════════════════ */
+        #screen-quiz {
+            background: linear-gradient(145deg, #ffecd2 0%, #fcb69f 100%);
+        }
+
+        .quiz-header-row {
+            display: flex; justify-content: space-around;
+            margin-bottom: 12px; flex-shrink: 0; gap: 10px;
+        }
+        .score-pill {
+            background: white; border-radius: 18px;
+            padding: 10px 20px; font-size: 19px; font-weight: 800;
+            color: #2d3436; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex; align-items: center; gap: 8px; flex: 1;
+            justify-content: center;
+        }
+
+        .quiz-listen-box {
+            background: white; border-radius: 26px;
+            padding: 18px; display: flex; flex-direction: column;
+            align-items: center; gap: 10px;
+            box-shadow: var(--shadow); flex-shrink: 0;
+        }
+
+        .listen-btn {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none; cursor: pointer; font-size: 48px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 8px 24px rgba(102,126,234,0.4);
+            transition: transform 0.12s;
+            animation: pulse-ring 2s ease-in-out infinite;
+        }
+        .listen-btn:active { transform: scale(0.86); animation: none; }
+        @keyframes pulse-ring {
+            0%,100% { box-shadow: 0 8px 24px rgba(102,126,234,0.4), 0 0 0 0 rgba(102,126,234,0.3); }
+            50%      { box-shadow: 0 8px 24px rgba(102,126,234,0.4), 0 0 0 14px rgba(102,126,234,0); }
+        }
+        .listen-hint { font-size: 16px; font-weight: 800; color: #636e72; }
+
+        .quiz-hint-row {
+            display: flex; justify-content: center; margin-top: 8px; flex-shrink: 0;
+        }
+        .hint-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 10px 22px; border-radius: 50px;
+            background: rgba(255,255,255,0.7); border: 2px solid rgba(255,255,255,0.9);
+            cursor: pointer; font-size: 16px; font-weight: 800;
+            color: #636e72; font-family: var(--font);
+            transition: transform 0.12s, background 0.12s;
+        }
+        .hint-btn:active { transform: scale(0.93); background: rgba(255,255,255,0.9); }
+
+        .quiz-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 12px; flex: 1; margin-top: 12px; min-height: 0;
+        }
+
+        .quiz-choice {
+            background: white; border-radius: 22px;
+            border: 4px solid transparent; padding: 14px 10px;
+            cursor: pointer; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 8px;
+            box-shadow: var(--shadow);
+            transition: transform 0.12s, border-color 0.15s, background 0.15s;
+            min-height: 130px;
+        }
+        .quiz-choice:active { transform: scale(0.93); }
+        .quiz-choice.correct { background: #d4edda; border-color: var(--correct); animation: pop 0.38s cubic-bezier(0.34,1.56,0.64,1); }
+        .quiz-choice.wrong   { background: #f8d7da; border-color: var(--wrong);   animation: shake 0.38s ease; }
+
+        @keyframes pop   { 0%{ transform:scale(1) } 55%{ transform:scale(1.10) } 100%{ transform:scale(1) } }
+        @keyframes shake { 0%,100%{ transform:translateX(0) } 25%{ transform:translateX(-10px) } 75%{ transform:translateX(10px) } }
+
+        .choice-emoji { font-size: 56px; line-height: 1; }
+        .choice-word  { font-size: 17px; font-weight: 900; color: #2d3436; text-align: center; }
+
+        .quiz-progress-text {
+            text-align: center; font-size: 16px; font-weight: 700;
+            color: rgba(0,0,0,0.4); flex-shrink: 0; margin-top: 8px;
+        }
+
+        /* ══════════════════════════════════════════
+           MEMORY SCREEN
+        ══════════════════════════════════════════ */
+        #screen-memory {
+            background: linear-gradient(145deg, #e0c3fc 0%, #8ec5fc 100%);
+        }
+
+        .mem-stats {
+            display: flex; justify-content: space-around;
+            margin-bottom: 12px; flex-shrink: 0; gap: 10px;
+        }
+        .mem-stat {
+            background: white; border-radius: 16px;
+            padding: 10px 16px; font-size: 17px; font-weight: 800;
+            color: #2d3436; box-shadow: var(--shadow-sm);
+            display: flex; align-items: center; gap: 6px; flex: 1;
+            justify-content: center;
+        }
+
+        .mem-grid {
+            display: grid; gap: 10px;
+            flex: 1; align-content: center;
+        }
+
+        .mem-card {
+            perspective: 700px;
+            cursor: pointer;
+            min-height: 90px;
+        }
+
+        .mem-card-inner {
+            width: 100%; height: 100%;
+            position: relative;
+            transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+            transform-style: preserve-3d;
+        }
+        .mem-card.flipped .mem-card-inner { transform: rotateY(180deg); }
+        .mem-card.matched .mem-card-inner { transform: rotateY(180deg); }
+
+        .mem-face, .mem-back {
+            position: absolute; inset: 0;
+            border-radius: 18px;
+            display: flex; align-items: center; justify-content: center;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+        }
+        .mem-face {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            font-size: 36px;
+        }
+        .mem-back { background: white; transform: rotateY(180deg); }
+        .mem-back.is-emoji { font-size: 40px; }
+        .mem-back.is-word  { font-size: 17px; font-weight: 900; color: #2d3436; text-align: center; padding: 8px; }
+
+        .mem-card.matched .mem-face { background: linear-gradient(135deg, #00b894, #00cec9); }
+        .mem-card.matched .mem-back { background: #e8fff7; }
+        .mem-card.matched { animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+
+        /* ══════════════════════════════════════════
+           RESULT SCREEN
+        ══════════════════════════════════════════ */
+        #screen-result {
+            background: linear-gradient(145deg, #a8ff78 0%, #78ffd6 100%);
+            align-items: center; justify-content: center;
+            gap: 16px; text-align: center;
+        }
+
+        .result-trophy { font-size: 100px; animation: trophy-in 0.55s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes trophy-in { from { transform:scale(0) rotate(-20deg); opacity:0; } to { transform:scale(1) rotate(0); opacity:1; } }
+
+        .result-title  { font-size: 44px; font-weight: 900; color: #2d3436; }
+        .result-stars  { font-size: 54px; letter-spacing: 6px; }
+        .result-score  { font-size: 22px; font-weight: 700; color: #636e72; }
+        .result-level  { font-size: 20px; font-weight: 800; color: #2d3436;
+            background: rgba(255,255,255,0.7); border-radius: 50px;
+            padding: 10px 24px; }
+
+        .result-btns { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+        .result-btn {
+            padding: 20px 32px; border-radius: 22px;
+            font-size: 20px; font-weight: 900;
+            border: none; cursor: pointer;
+            font-family: var(--font); box-shadow: var(--shadow);
+            transition: transform 0.12s;
+        }
+        .result-btn:active { transform: scale(0.94); }
+        .btn-again { background: #667eea; color: white; }
+        .btn-home  { background: white; color: #2d3436; }
+
+        /* ── BUILD A SENTENCE ── */
+        #screen-build {
+            background: linear-gradient(145deg, #f9ca24 0%, #f0932b 100%);
+        }
+
+        .build-word-card {
+            background: white; border-radius: 26px;
+            padding: 16px 18px;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            box-shadow: var(--shadow); flex-shrink: 0;
+        }
+        .build-emoji   { font-size: 68px; line-height: 1; }
+        .build-english { font-size: 22px; font-weight: 700; color: #636e72; }
+
+        .build-slots {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            justify-content: center; align-items: center;
+            min-height: 68px; flex-shrink: 0; padding: 4px 0;
+        }
+
+        .build-slot {
+            min-width: 72px; height: 60px;
+            border-radius: 14px;
+            border: 3px dashed rgba(0,0,0,0.18);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 19px; font-weight: 900;
+            background: rgba(255,255,255,0.35);
+            color: #2d3436; padding: 0 12px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .build-slot.filled {
+            border-style: solid; border-color: var(--correct);
+            background: #d4edda;
+            animation: pop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+
+        .build-hint {
+            text-align: center; font-size: 16px; font-weight: 800;
+            color: rgba(0,0,0,0.38); flex-shrink: 0;
+        }
+
+        .build-tiles {
+            display: flex; flex-wrap: wrap; gap: 10px;
+            justify-content: center; align-content: flex-start;
+            flex: 1; padding-bottom: 10px;
+        }
+
+        .build-tile {
+            padding: 16px 26px; border-radius: 20px;
+            background: white; border: none; cursor: pointer;
+            font-size: 22px; font-weight: 900; color: #2d3436;
+            font-family: var(--font);
+            box-shadow: 0 5px 16px rgba(0,0,0,0.13);
+            transition: transform 0.12s, opacity 0.15s;
+        }
+        .build-tile:active { transform: scale(0.90); }
+        .build-tile.wrong  { animation: shake 0.35s ease; }
+        .build-tile.gone   { opacity: 0; pointer-events: none; width: 0; padding: 0; margin: 0; overflow: hidden; }
+
+        /* ══════════════════════════════════════════
+           PROGRESS SCREEN
+        ══════════════════════════════════════════ */
+        #screen-progress {
+            background: linear-gradient(145deg, #f6d365 0%, #fda085 100%);
+        }
+
+        .prog-hero {
+            background: rgba(255,255,255,0.22);
+            border-radius: 24px; padding: 20px;
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            margin-bottom: 14px; flex-shrink: 0;
+        }
+        .prog-mascot  { font-size: 48px; animation: float 3s ease-in-out infinite; }
+        .prog-total   { font-size: 56px; font-weight: 900; color: white; text-shadow: 0 4px 8px rgba(0,0,0,0.18); }
+        .prog-label   { font-size: 18px; font-weight: 700; color: rgba(255,255,255,0.88); }
+        .prog-level   { font-size: 20px; font-weight: 900; color: white;
+            background: rgba(0,0,0,0.15); border-radius: 50px;
+            padding: 8px 22px; margin-top: 4px; }
+
+        .prog-list {
+            display: flex; flex-direction: column; gap: 10px;
+            overflow-y: auto; flex: 1; padding-bottom: 10px;
+        }
+
+        .prog-item {
+            background: white; border-radius: 20px;
+            padding: 14px 18px;
+            display: flex; align-items: center; gap: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .prog-cat-emoji { font-size: 40px; }
+        .prog-info { flex: 1; min-width: 0; }
+        .prog-name  { font-size: 18px; font-weight: 800; color: #2d3436; }
+        .prog-bar   { height: 10px; background: #f0f0f0; border-radius: 10px; overflow: hidden; margin-top: 6px; }
+        .prog-fill  { height: 100%; border-radius: 10px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.7s ease; }
+        .prog-count { font-size: 18px; font-weight: 900; color: #fdcb6e; white-space: nowrap; }
+
+        .reset-btn {
+            margin-top: 12px; width: 100%; padding: 18px;
+            background: rgba(255,255,255,0.28); color: white;
+            font-size: 18px; font-weight: 800;
+            border-radius: 20px; border: none; cursor: pointer;
+            font-family: var(--font); flex-shrink: 0;
+            transition: background 0.12s, transform 0.12s;
+        }
+        .reset-btn:active { transform: scale(0.97); background: rgba(255,255,255,0.45); }
+
+        /* ── SPELLING SCREEN ── */
+        #screen-spelling {
+            background: linear-gradient(145deg, #d4fc79 0%, #96e6a1 100%);
+        }
+
+        /* ── REPEAT SCREEN ── */
+        #screen-repeat {
+            background: linear-gradient(145deg, #84fab0 0%, #8fd3f4 100%);
+        }
+
+        .rep-card {
+            flex: 1; background: white; border-radius: 32px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 14px; padding: 26px;
+            box-shadow: var(--shadow); min-height: 0;
+        }
+        .rep-emoji   { font-size: 80px; line-height: 1; }
+        .rep-english { font-size: 22px; font-weight: 700; color: #636e72; text-align: center; }
+        .rep-danish  {
+            font-size: 38px; font-weight: 900; color: #2d3436;
+            text-align: center; line-height: 1.2;
+            background: #f8f9ff; border-radius: 18px;
+            padding: 14px 20px; width: 100%;
+        }
+
+        .rep-audio-row {
+            display: flex; gap: 10px; flex-shrink: 0;
+            margin-top: 14px; justify-content: center; flex-wrap: wrap;
+        }
+
+        .rep-play-btn {
+            display: flex; align-items: center; gap: 10px;
+            padding: 16px 28px; border-radius: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none; cursor: pointer;
+            font-size: 20px; font-weight: 900; color: white;
+            font-family: var(--font);
+            box-shadow: 0 6px 18px rgba(102,126,234,0.35);
+            transition: transform 0.12s;
+        }
+        .rep-play-btn:active { transform: scale(0.92); }
+
+        .rep-slow-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 16px 22px; border-radius: 50px;
+            background: white; border: 3px solid #dfe6e9;
+            cursor: pointer; font-size: 18px; font-weight: 800; color: #636e72;
+            font-family: var(--font);
+            transition: transform 0.12s, border-color 0.12s;
+        }
+        .rep-slow-btn:active { transform: scale(0.92); border-color: #b2bec3; }
+
+        .rep-confirm-btn {
+            width: 100%; padding: 22px; border-radius: 24px;
+            border: none; cursor: pointer;
+            background: var(--correct); color: white;
+            font-size: 24px; font-weight: 900;
+            font-family: var(--font);
+            box-shadow: 0 6px 20px rgba(0,184,148,0.35);
+            transition: transform 0.12s;
+            flex-shrink: 0; margin-top: 12px;
+        }
+        .rep-confirm-btn:active { transform: scale(0.96); }
+
+        .rep-counter {
+            text-align: center; font-size: 18px; font-weight: 700;
+            color: rgba(0,0,0,0.35); flex-shrink: 0; margin-top: 8px;
+        }
+
+        /* ── TRANSLATE QUIZ SCREEN ── */
+        #screen-translate {
+            background: linear-gradient(145deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .tr-question-box {
+            background: white; border-radius: 26px;
+            padding: 20px 18px;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 10px;
+            box-shadow: var(--shadow);
+            flex-shrink: 0; margin-bottom: 12px;
+        }
+        .tr-emoji  { font-size: 60px; line-height: 1; }
+        .tr-danish { font-size: 30px; font-weight: 900; color: #2d3436; text-align: center; line-height: 1.2; }
+        .tr-prompt { font-size: 16px; font-weight: 700; color: #636e72; }
+
+        .tr-choices { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+
+        .tr-choice {
+            background: white; border-radius: 20px;
+            border: 4px solid transparent;
+            padding: 18px 22px; cursor: pointer;
+            font-size: 20px; font-weight: 800; color: #2d3436;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            transition: transform 0.12s, border-color 0.15s, background 0.15s;
+            text-align: left; display: flex; align-items: center; gap: 14px;
+        }
+        .tr-choice:active { transform: scale(0.97); }
+        .tr-choice.correct { background: #d4edda; border-color: var(--correct); animation: pop 0.38s cubic-bezier(0.34,1.56,0.64,1); }
+        .tr-choice.wrong   { background: #f8d7da; border-color: var(--wrong);   animation: shake 0.38s ease; }
+        .tr-choice-letter  { font-size: 22px; font-weight: 900; color: #b2bec3; }
+
+        /* ── SPEED TOGGLE ── */
+        .speed-btn {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            border: none; cursor: pointer; font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            transition: transform 0.12s, background 0.12s; flex-shrink: 0;
+        }
+        .speed-btn:active { transform: scale(0.88); background: rgba(255,255,255,0.4); }
+
+        /* ── ENGLISH SPEAKER ── */
+        .en-speaker-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border-radius: 50px;
+            background: #f0f4ff; border: 2px solid #c5d0ff;
+            cursor: pointer; font-size: 17px; font-weight: 700;
+            color: #4a5568; font-family: var(--font);
+            transition: transform 0.12s, background 0.12s;
+        }
+        .en-speaker-btn:active { transform: scale(0.93); background: #dde5ff; }
+
+        /* ── ANIMATIONS ── */
+        @keyframes bounce-in { from{ transform:scale(0.6); opacity:0; } to{ transform:scale(1); opacity:1; } }
+        .bounce-in { animation: bounce-in 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed; bottom: 36px; left: 50%;
+            transform: translateX(-50%) translateY(90px);
+            background: #2d3436; color: white;
+            padding: 16px 32px; border-radius: 50px;
+            font-size: 20px; font-weight: 800; font-family: var(--font);
+            z-index: 9999;
+            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+            pointer-events: none; white-space: nowrap;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* ── CONFETTI ── */
+        .confetti {
+            position: fixed; pointer-events: none; z-index: 9998;
+            animation: fall linear forwards;
+        }
+        @keyframes fall {
+            0%  { transform: translateY(-30px) rotate(0deg); opacity: 1; }
+            100%{ transform: translateY(105vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (min-width: 600px) {
+            .home-title { font-size: 58px; }
+            .category-grid { grid-template-columns: repeat(3, 1fr); }
+            .flash-emoji { font-size: 120px; }
+            .flash-danish { font-size: 64px; }
+            .choice-emoji { font-size: 64px; }
+            .game-opt-icon { font-size: 58px; }
+        }
+        @media (min-height: 800px) {
+            .home-btn { padding: 26px 34px; font-size: 24px; }
+        }
+        @media (min-height: 900px) {
+            .flash-card { gap: 18px; }
+            .mem-card { min-height: 110px; }
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+
+    <!-- ═══════════════════ HOME ═══════════════════ -->
+    <div class="screen" id="screen-home">
+        <div class="home-top-row">
+            <div class="home-stars-pill">⭐ <span id="home-star-count">0</span></div>
+            <div class="level-badge" id="home-level-badge">🌱 Beginner</div>
+        </div>
+        <div class="home-mascot">🦉</div>
+        <div class="mascot-name">Otto says: Hej! 👋</div>
+        <div class="home-title">Lær Dansk!<br>🇩🇰</div>
+        <div class="home-subtitle">Learn Danish the fun way!</div>
+        <div class="streak-badge" id="streak-badge">🔥 <span id="streak-count">0</span> day streak!</div>
+        <div class="home-btns">
+            <button class="home-btn btn-learn" onclick="goLearn()">
+                <span class="icon">📚</span>
+                <div class="btn-label">
+                    <span>Learn Words</span>
+                    <span class="btn-sub">Flashcards with sound</span>
+                </div>
+            </button>
+            <button class="home-btn btn-play" onclick="goPlay()">
+                <span class="icon">🎮</span>
+                <div class="btn-label">
+                    <span>Play Games</span>
+                    <span class="btn-sub">Quiz, memory &amp; more!</span>
+                </div>
+            </button>
+            <button class="home-btn btn-stars" onclick="goProgress()">
+                <span class="icon">⭐</span>
+                <div class="btn-label">
+                    <span>My Stars</span>
+                    <span class="btn-sub">See your progress</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════ CATEGORIES ═══════════════════ -->
+    <div class="screen hidden" id="screen-categories">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('home')">← Back</button>
+            <div class="screen-title" id="cat-title">Choose a Topic</div>
+            <div style="width:80px"></div>
+        </div>
+        <div class="how-to" id="cat-how-to">👆 Tap a topic to start!</div>
+        <div class="category-grid" id="cat-grid"></div>
+    </div>
+
+    <!-- ═══════════════════ GAME SELECT ═══════════════════ -->
+    <div class="screen hidden" id="screen-game-select">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('categories')">← Back</button>
+            <div class="screen-title">Pick a Game</div>
+            <div style="width:80px"></div>
+        </div>
+        <div class="how-to">🎮 Choose a game to play!</div>
+        <div class="game-opts">
+            <div class="game-opt" onclick="startQuiz()">
+                <span class="game-opt-icon">🔊</span>
+                <div>
+                    <div class="game-opt-title">Listen &amp; Tap</div>
+                    <div class="game-opt-desc">Hear the Danish word — find the picture!</div>
+                </div>
+                <span class="game-opt-arrow">▶</span>
+            </div>
+            <div class="game-opt" onclick="startMemory()">
+                <span class="game-opt-icon">🃏</span>
+                <div>
+                    <div class="game-opt-title">Memory Match</div>
+                    <div class="game-opt-desc">Match the Danish word with its picture!</div>
+                </div>
+                <span class="game-opt-arrow">▶</span>
+            </div>
+            <div class="game-opt" onclick="startSpelling()">
+                <span class="game-opt-icon">🔤</span>
+                <div>
+                    <div class="game-opt-title">What's the Word?</div>
+                    <div class="game-opt-desc">See the picture — pick the right word!</div>
+                </div>
+                <span class="game-opt-arrow">▶</span>
+            </div>
+            <div class="game-opt" onclick="startRepeat()">
+                <span class="game-opt-icon">🗣️</span>
+                <div>
+                    <div class="game-opt-title">Say It!</div>
+                    <div class="game-opt-desc">Listen to the word and say it out loud!</div>
+                </div>
+                <span class="game-opt-arrow">▶</span>
+            </div>
+            <div class="game-opt" onclick="startTranslateQuiz()">
+                <span class="game-opt-icon">🌍</span>
+                <div>
+                    <div class="game-opt-title">What Does It Mean?</div>
+                    <div class="game-opt-desc">Hear the Danish — pick the English meaning!</div>
+                </div>
+                <span class="game-opt-arrow">▶</span>
+            </div>
+            <div class="game-opt" onclick="startBuildSentence()">
+                <span class="game-opt-icon">🧩</span>
+                <div>
+                    <div class="game-opt-title">Build a Sentence</div>
+                    <div class="game-opt-desc">Tap the word tiles in the right order!</div>
+                </div>
+                <span class="game-opt-arrow">▶</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════ BUILD A SENTENCE ═══════════════════ -->
+    <div class="screen hidden" id="screen-build">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('game-select')">← Back</button>
+            <div class="pill-badge">✅ <span id="build-correct-count">0</span></div>
+        </div>
+        <div class="quiz-header-row">
+            <div class="score-pill">⭐ <span id="build-stars">0</span></div>
+            <div class="score-pill">📊 Q<span id="build-q-num">1</span>/<span id="build-q-total">8</span></div>
+        </div>
+        <div class="how-to">🧩 Tap the tiles in the right order!</div>
+        <div class="build-word-card">
+            <div class="build-emoji"   id="build-emoji">🐕</div>
+            <div class="build-english" id="build-english">dog</div>
+            <button class="speaker-btn" onclick="speakBuildWord()" style="margin-top:4px">🔊</button>
+        </div>
+        <div style="text-align:center;font-size:15px;font-weight:800;color:rgba(0,0,0,0.3);margin:8px 0 2px;">
+            Build the Danish sentence ↓
+        </div>
+        <div class="build-slots" id="build-slots"></div>
+        <div class="build-tiles" id="build-tiles"></div>
+    </div>
+
+    <!-- ═══════════════════ REPEAT (SAY IT) ═══════════════════ -->
+    <div class="screen hidden" id="screen-repeat">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('game-select')">← Back</button>
+            <div class="pill-badge">⭐ <span id="rep-star-count">0</span></div>
+            <button class="speed-btn" id="rep-speed-btn" onclick="toggleSpeed()" title="Toggle speed">🐇</button>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="rep-prog-fill" style="width:0%"></div>
+        </div>
+        <div class="how-to">🗣️ Listen, then say it out loud!</div>
+        <div class="rep-card">
+            <div class="rep-emoji"   id="rep-emoji">👋</div>
+            <div class="rep-english" id="rep-english">Hello</div>
+            <div class="rep-danish"  id="rep-danish">Hej</div>
+        </div>
+        <div class="rep-audio-row">
+            <button class="rep-play-btn" onclick="speakRepeat()">🔊 Hear it</button>
+            <button class="rep-slow-btn" onclick="speakRepeatSlow()">🐢 Slow</button>
+            <button class="en-speaker-btn" onclick="speakRepeatEnglish()">🇬🇧</button>
+        </div>
+        <button class="rep-confirm-btn" onclick="confirmRepeat()">✅ I said it! ⭐</button>
+        <div class="rep-counter" id="rep-counter">1 / 10</div>
+    </div>
+
+    <!-- ═══════════════════ TRANSLATE QUIZ ═══════════════════ -->
+    <div class="screen hidden" id="screen-translate">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('game-select')">← Back</button>
+            <div class="pill-badge">✅ <span id="tr-correct">0</span></div>
+        </div>
+        <div class="quiz-header-row">
+            <div class="score-pill">⭐ <span id="tr-stars">0</span></div>
+            <div class="score-pill">📊 Q<span id="tr-q-num">1</span>/<span id="tr-q-total">10</span></div>
+        </div>
+        <div class="how-to">🌍 What does the Danish word mean?</div>
+        <div class="tr-question-box">
+            <div class="tr-emoji" id="tr-emoji">❓</div>
+            <div class="tr-danish" id="tr-danish">Hvad er det?</div>
+            <button class="listen-btn" style="width:72px;height:72px;font-size:32px;animation:none;" onclick="speakTranslate()">🔊</button>
+            <div class="tr-prompt">What does this mean in English?</div>
+        </div>
+        <div class="tr-choices" id="tr-choices"></div>
+    </div>
+
+    <!-- ═══════════════════ LEARN (FLASHCARD) ═══════════════════ -->
+    <div class="screen hidden" id="screen-learn">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('categories')">← Back</button>
+            <div class="pill-badge">⭐ <span id="learn-star-count">0</span></div>
+            <button class="speed-btn" id="speed-btn" onclick="toggleSpeed()" title="Toggle speed">🐇</button>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="learn-prog-fill" style="width:0%"></div>
+        </div>
+        <div class="flash-card" id="flash-card" onclick="speakFlash()">
+            <div class="flash-emoji" id="flash-emoji">🐕</div>
+            <div class="flash-danish" id="flash-danish">hund</div>
+            <div class="flash-en" id="flash-en">dog</div>
+            <div class="flash-tap-hint">👆 Tap card to hear it!</div>
+            <div style="display:flex;gap:12px;align-items:center;margin-top:6px;">
+                <button class="speaker-btn" onclick="speakFlash();event.stopPropagation()" title="Hear in Danish">🔊</button>
+                <button class="en-speaker-btn" onclick="speakEnglishFlash();event.stopPropagation()">🇬🇧 English</button>
+            </div>
+        </div>
+        <div class="flash-nav">
+            <button class="nav-btn" onclick="learnPrev()">◀ Prev</button>
+            <div class="flash-counter" id="flash-counter">1 / 10</div>
+            <button class="nav-btn next-btn" onclick="learnNext()">Next ▶</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════ QUIZ ═══════════════════ -->
+    <div class="screen hidden" id="screen-quiz">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('game-select')">← Back</button>
+            <div class="pill-badge">🎯 <span id="quiz-correct-count">0</span></div>
+        </div>
+        <div class="quiz-header-row">
+            <div class="score-pill">⭐ <span id="quiz-star-count">0</span></div>
+            <div class="score-pill">📊 Q<span id="quiz-q-num">1</span>/<span id="quiz-q-total">10</span></div>
+        </div>
+        <div class="quiz-listen-box">
+            <button class="listen-btn" id="listen-btn" onclick="speakQuizWord()">🔊</button>
+            <div class="listen-hint">Tap to hear the word again!</div>
+        </div>
+        <div class="quiz-hint-row">
+            <button class="hint-btn" id="quiz-hint-btn" onclick="showQuizHint()">💡 Hint</button>
+        </div>
+        <div class="quiz-grid" id="quiz-grid"></div>
+        <div class="quiz-progress-text" id="quiz-prog-text"></div>
+    </div>
+
+    <!-- ═══════════════════ MEMORY ═══════════════════ -->
+    <div class="screen hidden" id="screen-memory">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('game-select')">← Back</button>
+            <div class="screen-title" id="mem-cat-title">Memory</div>
+            <div style="width:80px"></div>
+        </div>
+        <div class="how-to">🃏 Match the word with its picture!</div>
+        <div class="mem-stats">
+            <div class="mem-stat">🃏 <span id="mem-moves">0</span> moves</div>
+            <div class="mem-stat">✅ <span id="mem-matched">0</span>/<span id="mem-pairs">8</span></div>
+            <div class="mem-stat">⏱️ <span id="mem-timer">0</span>s</div>
+        </div>
+        <div class="mem-grid" id="mem-grid"></div>
+    </div>
+
+    <!-- ═══════════════════ SPELLING (Word pick) ═══════════════════ -->
+    <div class="screen hidden" id="screen-spelling">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('game-select')">← Back</button>
+            <div class="pill-badge">✅ <span id="spell-correct">0</span></div>
+        </div>
+        <div class="quiz-header-row">
+            <div class="score-pill">⭐ <span id="spell-stars">0</span></div>
+            <div class="score-pill">📊 Q<span id="spell-q-num">1</span>/<span id="spell-q-total">10</span></div>
+        </div>
+        <div class="how-to">🔤 Which Danish word matches the picture?</div>
+        <div style="background:white;border-radius:26px;box-shadow:var(--shadow);
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;padding:20px;margin-bottom:10px;">
+            <div id="spell-emoji" style="font-size:110px;line-height:1;"></div>
+        </div>
+        <div style="text-align:center;font-size:20px;font-weight:700;color:rgba(0,0,0,0.4);margin-bottom:12px;flex-shrink:0;">
+            "<span id="spell-english" style="font-weight:900;color:#2d3436;font-size:22px;"></span>" in Danish?
+        </div>
+        <div class="quiz-grid" id="spell-grid"></div>
+    </div>
+
+    <!-- ═══════════════════ RESULT ═══════════════════ -->
+    <div class="screen hidden" id="screen-result">
+        <div style="flex:1"></div>
+        <div class="result-trophy" id="result-trophy">🏆</div>
+        <div class="result-title"  id="result-title">Amazing!</div>
+        <div class="result-stars"  id="result-stars">⭐⭐⭐</div>
+        <div class="result-score"  id="result-score">10 / 10 correct</div>
+        <div class="result-level"  id="result-level">🌱 Beginner</div>
+        <div class="result-btns">
+            <button class="result-btn btn-again" onclick="restartGame()">▶ Play Again</button>
+            <button class="result-btn btn-home"  onclick="showScreen('home')">🏠 Home</button>
+        </div>
+        <div style="flex:1"></div>
+    </div>
+
+    <!-- ═══════════════════ PROGRESS ═══════════════════ -->
+    <div class="screen hidden" id="screen-progress">
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('home')">← Back</button>
+            <div class="screen-title">My Stars ⭐</div>
+            <div style="width:80px"></div>
+        </div>
+        <div class="prog-hero">
+            <div class="prog-mascot">🦉</div>
+            <div class="prog-total" id="prog-total">0</div>
+            <div class="prog-label">Total Stars Earned!</div>
+            <div class="prog-level" id="prog-level-badge">🌱 Beginner</div>
+        </div>
+        <div class="prog-list" id="prog-list"></div>
+        <button class="reset-btn" onclick="confirmReset()">🔄 Reset Progress</button>
+    </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════
+   VOCABULARY DATA
+══════════════════════════════════════════════ */
+
+const CATEGORIES = [
+    { id:'animals',    name:'Animals',        danish:'Dyr',          emoji:'🐾', color:'#27ae60' },
+    { id:'colors',     name:'Colors',         danish:'Farver',       emoji:'🎨', color:'#8e44ad' },
+    { id:'numbers',    name:'Numbers',        danish:'Tal',          emoji:'🔢', color:'#2980b9' },
+    { id:'food',       name:'Food',           danish:'Mad',          emoji:'🍎', color:'#e74c3c' },
+    { id:'family',     name:'Family',         danish:'Familie',      emoji:'👨‍👩‍👧', color:'#e67e22' },
+    { id:'phrases',    name:'Phrases',        danish:'Sætninger',    emoji:'💬', color:'#c0392b' },
+    { id:'body',       name:'My Body',        danish:'Kroppen',      emoji:'🫀', color:'#16a085' },
+    { id:'questions',  name:'Questions',      danish:'Spørgsmål',    emoji:'🤔', color:'#d35400' },
+    { id:'house',      name:'In the House',   danish:'I hjemmet',    emoji:'🏠', color:'#1abc9c' },
+    { id:'playground', name:'Playground',     danish:'Legepladsen',  emoji:'🛝', color:'#3498db' },
+    { id:'feelings',   name:'Feelings',       danish:'Følelser',     emoji:'😊', color:'#9b59b6' },
+];
+
+const VOCAB = {
+    animals: [
+        { danish:'hund',     english:'dog',       emoji:'🐕' },
+        { danish:'kat',      english:'cat',       emoji:'🐈' },
+        { danish:'fugl',     english:'bird',      emoji:'🐦' },
+        { danish:'fisk',     english:'fish',      emoji:'🐟' },
+        { danish:'elefant',  english:'elephant',  emoji:'🐘' },
+        { danish:'løve',     english:'lion',      emoji:'🦁' },
+        { danish:'bjørn',    english:'bear',      emoji:'🐻' },
+        { danish:'frø',      english:'frog',      emoji:'🐸' },
+        { danish:'kanin',    english:'rabbit',    emoji:'🐰' },
+        { danish:'ko',       english:'cow',       emoji:'🐄' },
+        { danish:'hest',     english:'horse',     emoji:'🐴' },
+        { danish:'abe',      english:'monkey',    emoji:'🐒' },
+    ],
+    colors: [
+        { danish:'rød',    english:'red',    emoji:'🔴' },
+        { danish:'blå',    english:'blue',   emoji:'🔵' },
+        { danish:'grøn',   english:'green',  emoji:'🟢' },
+        { danish:'gul',    english:'yellow', emoji:'🟡' },
+        { danish:'orange', english:'orange', emoji:'🟠' },
+        { danish:'lilla',  english:'purple', emoji:'🟣' },
+        { danish:'hvid',   english:'white',  emoji:'⚪' },
+        { danish:'sort',   english:'black',  emoji:'⚫' },
+        { danish:'pink',   english:'pink',   emoji:'🩷' },
+        { danish:'brun',   english:'brown',  emoji:'🟤' },
+    ],
+    numbers: [
+        { danish:'en',   english:'one',   emoji:'1️⃣' },
+        { danish:'to',   english:'two',   emoji:'2️⃣' },
+        { danish:'tre',  english:'three', emoji:'3️⃣' },
+        { danish:'fire', english:'four',  emoji:'4️⃣' },
+        { danish:'fem',  english:'five',  emoji:'5️⃣' },
+        { danish:'seks', english:'six',   emoji:'6️⃣' },
+        { danish:'syv',  english:'seven', emoji:'7️⃣' },
+        { danish:'otte', english:'eight', emoji:'8️⃣' },
+        { danish:'ni',   english:'nine',  emoji:'9️⃣' },
+        { danish:'ti',   english:'ten',   emoji:'🔟' },
+    ],
+    food: [
+        { danish:'æble',     english:'apple',      emoji:'🍎' },
+        { danish:'banan',    english:'banana',     emoji:'🍌' },
+        { danish:'mælk',     english:'milk',       emoji:'🥛' },
+        { danish:'brød',     english:'bread',      emoji:'🍞' },
+        { danish:'ost',      english:'cheese',     emoji:'🧀' },
+        { danish:'gulerod',  english:'carrot',     emoji:'🥕' },
+        { danish:'jordbær',  english:'strawberry', emoji:'🍓' },
+        { danish:'pizza',    english:'pizza',      emoji:'🍕' },
+        { danish:'is',       english:'ice cream',  emoji:'🍦' },
+        { danish:'kage',     english:'cake',       emoji:'🎂' },
+        { danish:'æg',       english:'egg',        emoji:'🥚' },
+        { danish:'appelsin', english:'orange',     emoji:'🍊' },
+    ],
+    family: [
+        { danish:'mor',    english:'mother',  emoji:'👩' },
+        { danish:'far',    english:'father',  emoji:'👨' },
+        { danish:'søster', english:'sister',  emoji:'👧' },
+        { danish:'bror',   english:'brother', emoji:'👦' },
+        { danish:'mormor', english:'grandma', emoji:'👵' },
+        { danish:'morfar', english:'grandpa', emoji:'👴' },
+        { danish:'baby',   english:'baby',    emoji:'👶' },
+        { danish:'hund',   english:'pet dog', emoji:'🐶' },
+        { danish:'kat',    english:'pet cat', emoji:'🐱' },
+    ],
+    phrases: [
+        { danish:'Hej',           english:'Hello',        emoji:'👋' },
+        { danish:'Farvel',        english:'Goodbye',      emoji:'✌️' },
+        { danish:'Tak',           english:'Thank you',    emoji:'🙏' },
+        { danish:'Ja',            english:'Yes',          emoji:'✅' },
+        { danish:'Nej',           english:'No',           emoji:'❌' },
+        { danish:'Undskyld',      english:'Sorry',        emoji:'😊' },
+        { danish:'God morgen',    english:'Good morning', emoji:'🌅' },
+        { danish:'God nat',       english:'Good night',   emoji:'🌙' },
+        { danish:'Hjælp',         english:'Help!',        emoji:'🆘' },
+        { danish:'Jeg er sulten', english:"I'm hungry",   emoji:'😋' },
+    ],
+    body: [
+        { danish:'hoved',  english:'head',  emoji:'🗣️' },
+        { danish:'øje',    english:'eye',   emoji:'👁️' },
+        { danish:'næse',   english:'nose',  emoji:'👃' },
+        { danish:'mund',   english:'mouth', emoji:'👄' },
+        { danish:'øre',    english:'ear',   emoji:'👂' },
+        { danish:'hånd',   english:'hand',  emoji:'🖐️' },
+        { danish:'fod',    english:'foot',  emoji:'🦶' },
+        { danish:'mave',   english:'tummy', emoji:'🫃' },
+        { danish:'arm',    english:'arm',   emoji:'💪' },
+        { danish:'ben',    english:'leg',   emoji:'🦵' },
+        { danish:'tand',   english:'tooth', emoji:'🦷' },
+        { danish:'hjerte', english:'heart', emoji:'❤️' },
+    ],
+    questions: [
+        { danish:'Hvad er det?',         english:'What is that?',       emoji:'❓' },
+        { danish:'Hvor er det?',         english:'Where is it?',        emoji:'📍' },
+        { danish:'Hvem er det?',         english:'Who is that?',        emoji:'🧐' },
+        { danish:'Hvordan gør man det?', english:'How do you do that?', emoji:'🤔' },
+        { danish:'Hvorfor?',             english:'Why?',                emoji:'🤷' },
+        { danish:'Hvornår?',             english:'When?',               emoji:'🕐' },
+        { danish:'Kan du hjælpe mig?',   english:'Can you help me?',    emoji:'🙋' },
+        { danish:'Hvad hedder du?',      english:'What is your name?',  emoji:'👤' },
+        { danish:'Hvor gammel er du?',   english:'How old are you?',    emoji:'🎂' },
+        { danish:'Må jeg?',              english:'May I?',              emoji:'🙏' },
+        { danish:'Forstår du?',          english:'Do you understand?',  emoji:'💡' },
+        { danish:'Kan du gentage det?',  english:'Can you repeat that?',emoji:'🔁' },
+    ],
+    house: [
+        { danish:'seng',    english:'bed',     emoji:'🛏️' },
+        { danish:'stol',    english:'chair',   emoji:'🪑' },
+        { danish:'bord',    english:'table',   emoji:'🪞' },
+        { danish:'vindue',  english:'window',  emoji:'🪟' },
+        { danish:'dør',     english:'door',    emoji:'🚪' },
+        { danish:'toilet',  english:'toilet',  emoji:'🚽' },
+        { danish:'bad',     english:'bath',    emoji:'🛁' },
+        { danish:'køkken',  english:'kitchen', emoji:'🍳' },
+        { danish:'sofa',    english:'sofa',    emoji:'🛋️' },
+        { danish:'lampe',   english:'lamp',    emoji:'💡' },
+        { danish:'bog',     english:'book',    emoji:'📚' },
+        { danish:'legetøj', english:'toy',     emoji:'🧸' },
+    ],
+    playground: [
+        { danish:'rutsjebane', english:'slide',   emoji:'🛝' },
+        { danish:'gynge',      english:'swing',   emoji:'🎠' },
+        { danish:'bold',       english:'ball',    emoji:'⚽' },
+        { danish:'sandkasse',  english:'sandbox', emoji:'🏖️' },
+        { danish:'cykel',      english:'bicycle', emoji:'🚲' },
+        { danish:'løb',        english:'run',     emoji:'🏃' },
+        { danish:'hop',        english:'jump',    emoji:'🦘' },
+        { danish:'klatre',     english:'climb',   emoji:'🧗' },
+        { danish:'lege',       english:'play',    emoji:'🎮' },
+        { danish:'fange',      english:'catch',   emoji:'🫳' },
+        { danish:'kaste',      english:'throw',   emoji:'🤾' },
+        { danish:'ven',        english:'friend',  emoji:'🤝' },
+    ],
+    feelings: [
+        { danish:'glad',       english:'happy',     emoji:'😄' },
+        { danish:'ked af det', english:'sad',       emoji:'😢' },
+        { danish:'vred',       english:'angry',     emoji:'😠' },
+        { danish:'bange',      english:'scared',    emoji:'😨' },
+        { danish:'træt',       english:'tired',     emoji:'😴' },
+        { danish:'sulten',     english:'hungry',    emoji:'😋' },
+        { danish:'tørstig',    english:'thirsty',   emoji:'🥤' },
+        { danish:'syg',        english:'sick',      emoji:'🤒' },
+        { danish:'overrasket', english:'surprised', emoji:'😲' },
+        { danish:'stolt',      english:'proud',     emoji:'🥹' },
+        { danish:'kærlig',     english:'loving',    emoji:'🥰' },
+        { danish:'rolig',      english:'calm',      emoji:'😌' },
+    ],
+};
+
+/* ══════════════════════════════════════════════
+   LEVELS
+══════════════════════════════════════════════ */
+
+const LEVELS = [
+    { name:'Beginner',  emoji:'🌱', min:0   },
+    { name:'Explorer',  emoji:'🔍', min:15  },
+    { name:'Star',      emoji:'⭐', min:40  },
+    { name:'Champion',  emoji:'🏆', min:80  },
+    { name:'Master',    emoji:'🎓', min:150 },
+];
+
+function getLevel(stars) {
+    for (let i = LEVELS.length - 1; i >= 0; i--) {
+        if (stars >= LEVELS[i].min) return LEVELS[i];
+    }
+    return LEVELS[0];
+}
+
+function getLevelLabel(stars) {
+    const lv = getLevel(stars);
+    return lv.emoji + ' ' + lv.name;
+}
+
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+
+const state = {
+    screen: 'home',
+    mode: null,
+    category: null,
+    learnIdx: 0,
+    speechRate: 1.0,
+
+    quizWords: [], quizIdx: 0, quizWord: null,
+    quizCorrect: 0, quizStars: 0, quizAnswered: false,
+
+    spellWords: [], spellIdx: 0, spellWord: null,
+    spellCorrect: 0, spellStars: 0, spellAnswered: false,
+
+    memCards: [], memFlipped: [], memMatched: 0,
+    memMoves: 0, memPairs: 0, memLocked: false,
+    memTimerInterval: null, memSeconds: 0,
+
+    repWords: [], repIdx: 0, repStars: 0,
+
+    trWords: [], trIdx: 0, trWord: null,
+    trCorrect: 0, trStars: 0, trAnswered: false,
+
+    buildWords: [], buildIdx: 0, buildWord: null,
+    buildSentence: [], buildTileOrder: [], buildTileUsed: [],
+    buildPlaced: 0, buildCorrect: 0, buildStars: 0,
+
+    stars: {},
+    streak: 0,
+    lastPlayDate: null,
+};
+
+function loadSaved() {
+    try {
+        const d = JSON.parse(localStorage.getItem('dansk-v2') || '{}');
+        state.stars        = d.stars        || {};
+        state.streak       = d.streak       || 0;
+        state.lastPlayDate = d.lastPlayDate || null;
+        updateStreak();
+    } catch(e) {}
+}
+
+function saveSaved() {
+    try {
+        localStorage.setItem('dansk-v2', JSON.stringify({
+            stars: state.stars,
+            streak: state.streak,
+            lastPlayDate: state.lastPlayDate,
+        }));
+    } catch(e) {}
+}
+
+function updateStreak() {
+    const today = new Date().toDateString();
+    if (state.lastPlayDate === today) return; // already counted today
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    if (state.lastPlayDate === yesterday) {
+        state.streak++;
+    } else if (state.lastPlayDate !== today) {
+        state.streak = 1;
+    }
+    state.lastPlayDate = today;
+    saveSaved();
+}
+
+function totalStars() { return Object.values(state.stars).reduce((a,b)=>a+b,0); }
+function catStars(id)  { return state.stars[id] || 0; }
+
+function addStars(catId, n) {
+    const before = totalStars();
+    state.stars[catId] = (state.stars[catId]||0) + n;
+    saveSaved();
+    const after = totalStars();
+    refreshStarUI();
+    checkLevelUp(before, after);
+}
+
+function checkLevelUp(before, after) {
+    const lb = getLevel(before), la = getLevel(after);
+    if (la.name !== lb.name) {
+        showToast(`🎉 Level up! You're now ${la.emoji} ${la.name}!`, 3000);
+    }
+}
+
+function refreshStarUI() {
+    const t = totalStars();
+    const lbl = getLevelLabel(t);
+    ['home-star-count','learn-star-count','prog-total'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = t;
+    });
+    const hb = document.getElementById('home-level-badge');    if (hb) hb.textContent = lbl;
+    const pb = document.getElementById('prog-level-badge');    if (pb) pb.textContent = lbl;
+    const rl = document.getElementById('result-level');        if (rl) rl.textContent = lbl;
+    const sc = document.getElementById('streak-count');        if (sc) sc.textContent = state.streak;
+}
+
+/* ══════════════════════════════════════════════
+   AUDIO ENGINE
+══════════════════════════════════════════════ */
+
+let audioCtx = null;
+function getCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+}
+
+function tone(freq, dur, type='sine', vol=0.28) {
+    const ctx = getCtx();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = freq; o.type = type;
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+dur);
+    o.start(ctx.currentTime); o.stop(ctx.currentTime+dur);
+}
+
+function sfxCorrect() {
+    tone(523,0.12); setTimeout(()=>tone(659,0.12),100); setTimeout(()=>tone(784,0.25),200);
+}
+function sfxWrong()  { tone(300,0.10); setTimeout(()=>tone(240,0.20),120); }
+function sfxLevelUp(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.18),i*110)); }
+function sfxFlip()   { tone(440,0.08,'square',0.08); }
+function sfxTap()    { tone(600,0.06,'sine',0.12); }
+
+function vibrate(ms=40) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+const IS_IOS = /iP(ad|hone|od)/.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+let _activeAudio = null;
+
+function _stopSpeech() {
+    if (_activeAudio) { _activeAudio.pause(); _activeAudio = null; }
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+function speak(text, rate) {
+    _stopSpeech();
+    const r = rate ?? state.speechRate;
+    IS_IOS ? _webSpeech(text, r, 'da-DK') : _googleTTS(text, r, 'da');
+}
+
+function speakEnglish(text) {
+    _stopSpeech();
+    IS_IOS ? _webSpeech(text, state.speechRate, 'en-GB') : _googleTTS(text, state.speechRate, 'en');
+}
+
+function _googleTTS(text, rate, lang) {
+    const url = 'https://translate.google.com/translate_tts?ie=UTF-8'
+        + '&q=' + encodeURIComponent(text)
+        + '&tl=' + lang + '&client=tw-ob';
+    const audio = new Audio(url);
+    audio.playbackRate = rate;
+    _activeAudio = audio;
+    let done = false;
+    const fallback = () => {
+        if (done) return; done = true; _activeAudio = null;
+        _webSpeech(text, rate, lang === 'da' ? 'da-DK' : 'en-GB');
+    };
+    audio.onerror = fallback;
+    audio.play().catch(fallback);
+}
+
+function _webSpeech(text, rate, lang) {
+    if (!window.speechSynthesis) return;
+    const delay = IS_IOS ? 80 : 0;
+    setTimeout(() => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang  = lang; u.rate = rate; u.pitch = 1.0;
+        const voices = window.speechSynthesis.getVoices();
+        const match  = voices.find(v => v.lang.startsWith(lang.slice(0,2)));
+        if (match) u.voice = match;
+        window.speechSynthesis.speak(u);
+    }, delay);
+}
+
+function toggleSpeed() {
+    state.speechRate = state.speechRate === 1.0 ? 0.65 : 1.0;
+    const isSlow = state.speechRate < 1.0;
+    document.querySelectorAll('.speed-btn').forEach(b => b.textContent = isSlow ? '🐢' : '🐇');
+    showToast(isSlow ? '🐢 Slow speed on' : '🐇 Normal speed');
+}
+
+if (window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    window.speechSynthesis.getVoices();
+}
+
+/* ══════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════ */
+
+function showScreen(id) {
+    const cur = document.querySelector('.screen:not(.hidden)');
+    const nxt = document.getElementById('screen-' + id);
+    if (!nxt || cur === nxt) return;
+    state.screen = id;
+
+    nxt.style.transform = 'translateX(50px)';
+    nxt.style.opacity   = '0';
+    nxt.classList.remove('hidden');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        nxt.style.transform = ''; nxt.style.opacity = '';
+    }));
+
+    if (cur) {
+        cur.style.opacity = '0';
+        cur.style.transform = 'translateX(-30px)';
+        setTimeout(() => {
+            cur.classList.add('hidden');
+            cur.style.transform = '';
+            cur.style.opacity   = '';
+        }, 300);
+    }
+
+    // Stop memory timer when leaving
+    if (id !== 'memory') stopMemTimer();
+    refreshStarUI();
+}
+
+/* ══════════════════════════════════════════════
+   HOME
+══════════════════════════════════════════════ */
+
+function goLearn() {
+    state.mode = 'learn';
+    document.getElementById('cat-title').textContent = '📚 What to Learn?';
+    document.getElementById('cat-how-to').textContent = '👆 Tap a topic to start learning!';
+    renderCats();
+    showScreen('categories');
+}
+
+function goPlay() {
+    state.mode = 'play';
+    document.getElementById('cat-title').textContent = '🎮 Pick a Category';
+    document.getElementById('cat-how-to').textContent = '👆 Tap a topic to play games!';
+    renderCats();
+    showScreen('categories');
+}
+
+function goProgress() {
+    renderProgress();
+    showScreen('progress');
+}
+
+/* ══════════════════════════════════════════════
+   CATEGORIES
+══════════════════════════════════════════════ */
+
+function renderCats() {
+    document.getElementById('cat-grid').innerHTML = CATEGORIES.map(c => {
+        const s = catStars(c.id);
+        const filled = Math.min(s, 5);
+        const starRow = '⭐'.repeat(filled) + '☆'.repeat(5 - filled);
+        return `
+          <div class="cat-card" style="--cat-color:${c.color}" onclick="pickCat('${c.id}')">
+            <div class="cat-emoji">${c.emoji}</div>
+            <div class="cat-name">${c.name}</div>
+            <div class="cat-danish">${c.danish}</div>
+            <div class="cat-star-row">${starRow}</div>
+            <div class="cat-count">${VOCAB[c.id].length} words</div>
+          </div>`;
+    }).join('');
+}
+
+function pickCat(id) {
+    sfxTap(); vibrate(30);
+    state.category = id;
+    if (state.mode === 'learn') {
+        startLearn();
+    } else {
+        const cat = CATEGORIES.find(c=>c.id===id);
+        document.getElementById('mem-cat-title').textContent = cat ? cat.emoji+' Memory' : 'Memory';
+        showScreen('game-select');
+    }
+}
+
+/* ══════════════════════════════════════════════
+   LEARN (FLASHCARD)
+══════════════════════════════════════════════ */
+
+function startLearn() {
+    state.learnIdx = 0;
+    renderFlash();
+    showScreen('learn');
+    setTimeout(()=>speakFlash(), 550);
+    setupSwipe(document.getElementById('flash-card'), learnNext, learnPrev);
+}
+
+function renderFlash() {
+    const words = VOCAB[state.category];
+    const w = words[state.learnIdx];
+
+    const card = document.getElementById('flash-card');
+    card.style.opacity = '0.6'; card.style.transform = 'scale(0.96)';
+    setTimeout(()=>{ card.style.opacity=''; card.style.transform=''; }, 130);
+
+    document.getElementById('flash-emoji').textContent   = w.emoji;
+    document.getElementById('flash-danish').textContent  = w.danish;
+    document.getElementById('flash-en').textContent      = w.english;
+    document.getElementById('flash-counter').textContent = `${state.learnIdx+1} / ${words.length}`;
+    document.getElementById('learn-prog-fill').style.width = ((state.learnIdx+1)/words.length*100)+'%';
+}
+
+function learnNext() {
+    const words = VOCAB[state.category];
+    if (state.learnIdx < words.length - 1) {
+        state.learnIdx++;
+        renderFlash();
+        setTimeout(()=>speakFlash(), 280);
+    } else {
+        addStars(state.category, 1);
+        sfxLevelUp(); vibrate(80);
+        showToast('🌟 Section complete! +1 star!');
+        setTimeout(()=>showScreen('categories'), 1800);
+    }
+}
+
+function learnPrev() {
+    if (state.learnIdx > 0) {
+        state.learnIdx--;
+        renderFlash();
+        setTimeout(()=>speakFlash(), 280);
+    }
+}
+
+function speakFlash() {
+    const w = VOCAB[state.category][state.learnIdx];
+    speak(w.danish);
+    const card = document.getElementById('flash-card');
+    card.classList.add('speaking');
+    setTimeout(()=>card.classList.remove('speaking'), 700);
+}
+
+function speakEnglishFlash() {
+    const w = VOCAB[state.category][state.learnIdx];
+    speakEnglish(w.english);
+}
+
+/* ══════════════════════════════════════════════
+   SWIPE GESTURE SUPPORT
+══════════════════════════════════════════════ */
+
+function setupSwipe(el, onRight, onLeft) {
+    if (!el) return;
+    let sx = 0, sy = 0;
+    el.addEventListener('touchstart', e => {
+        sx = e.touches[0].clientX;
+        sy = e.touches[0].clientY;
+    }, { passive: true });
+    el.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - sx;
+        const dy = e.changedTouches[0].clientY - sy;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+            if (dx < 0) onRight(); else onLeft();
+        }
+    }, { passive: true });
+}
+
+/* ══════════════════════════════════════════════
+   QUIZ — Listen & Tap the Image
+══════════════════════════════════════════════ */
+
+const QUIZ_LEN = 10;
+
+function startQuiz() {
+    const words = VOCAB[state.category];
+    state.quizWords   = shuffle([...words]).slice(0, Math.min(QUIZ_LEN, words.length));
+    state.quizIdx     = 0;
+    state.quizCorrect = 0;
+    state.quizStars   = 0;
+    state.mode        = 'quiz';
+    showScreen('quiz');
+    nextQuiz();
+}
+
+function nextQuiz() {
+    if (state.quizIdx >= state.quizWords.length) { showGameResult('quiz'); return; }
+    state.quizAnswered = false;
+
+    const hintBtn = document.getElementById('quiz-hint-btn');
+    if (hintBtn) { hintBtn.textContent = '💡 Hint'; hintBtn.disabled = false; hintBtn.style.opacity = '1'; }
+
+    const word = state.quizWords[state.quizIdx];
+    state.quizWord = word;
+
+    document.getElementById('quiz-correct-count').textContent = state.quizCorrect;
+    document.getElementById('quiz-star-count').textContent    = state.quizStars;
+    document.getElementById('quiz-q-num').textContent         = state.quizIdx + 1;
+    document.getElementById('quiz-q-total').textContent       = state.quizWords.length;
+    document.getElementById('quiz-prog-text').textContent     = `${state.quizIdx+1} of ${state.quizWords.length}`;
+
+    const all    = VOCAB[state.category];
+    const wrong  = shuffle(all.filter(w=>w.danish!==word.danish)).slice(0,3);
+    const choices = shuffle([word, ...wrong]);
+
+    document.getElementById('quiz-grid').innerHTML = choices.map((c,i)=>`
+        <div class="quiz-choice" id="qc${i}" onclick="answerQuiz(${i},'${c.danish}')">
+            <div class="choice-emoji">${c.emoji}</div>
+            <div class="choice-word">${c.english}</div>
+        </div>`).join('');
+
+    setTimeout(()=>speak(word.danish), 450);
+}
+
+function speakQuizWord() {
+    if (state.quizWord) speak(state.quizWord.danish);
+    const btn = document.getElementById('listen-btn');
+    btn.style.transform='scale(0.86)';
+    setTimeout(()=>btn.style.transform='', 200);
+}
+
+function showQuizHint() {
+    if (!state.quizWord) return;
+    const hint = `"${state.quizWord.english}" = ${state.quizWord.danish.charAt(0)}...`;
+    showToast('💡 ' + hint, 2500);
+    const btn = document.getElementById('quiz-hint-btn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = '💡 Used!'; }
+}
+
+function answerQuiz(idx, danish) {
+    if (state.quizAnswered) return;
+    state.quizAnswered = true;
+    vibrate(danish === state.quizWord.danish ? 40 : [40,30,40]);
+    const correct = danish === state.quizWord.danish;
+    const el = document.getElementById('qc' + idx);
+
+    if (correct) {
+        el.classList.add('correct'); sfxCorrect(); showConfetti();
+        state.quizCorrect++; state.quizStars++;
+        document.getElementById('quiz-correct-count').textContent = state.quizCorrect;
+        document.getElementById('quiz-star-count').textContent    = state.quizStars;
+    } else {
+        el.classList.add('wrong'); sfxWrong();
+        const correctEnglish = state.quizWord.english;
+        document.querySelectorAll('.quiz-choice').forEach(c => {
+            if (c.querySelector('.choice-word')?.textContent === correctEnglish)
+                c.classList.add('correct');
+        });
+    }
+
+    setTimeout(()=>speak(state.quizWord.danish), 300);
+    setTimeout(()=>{ state.quizIdx++; nextQuiz(); }, 1600);
+}
+
+/* ══════════════════════════════════════════════
+   SPELLING — See Image, Pick Word
+══════════════════════════════════════════════ */
+
+const SPELL_LEN = 10;
+
+function startSpelling() {
+    const words = VOCAB[state.category];
+    state.spellWords   = shuffle([...words]).slice(0, Math.min(SPELL_LEN, words.length));
+    state.spellIdx     = 0;
+    state.spellCorrect = 0;
+    state.spellStars   = 0;
+    state.mode         = 'spelling';
+    showScreen('spelling');
+    nextSpell();
+}
+
+function nextSpell() {
+    if (state.spellIdx >= state.spellWords.length) { showGameResult('spelling'); return; }
+    state.spellAnswered = false;
+    const word = state.spellWords[state.spellIdx];
+    state.spellWord = word;
+
+    document.getElementById('spell-correct').textContent = state.spellCorrect;
+    document.getElementById('spell-stars').textContent   = state.spellStars;
+    document.getElementById('spell-q-num').textContent   = state.spellIdx + 1;
+    document.getElementById('spell-q-total').textContent = state.spellWords.length;
+    document.getElementById('spell-emoji').textContent   = word.emoji;
+    document.getElementById('spell-english').textContent = word.english;
+
+    const all    = VOCAB[state.category];
+    const wrong  = shuffle(all.filter(w=>w.danish!==word.danish)).slice(0,3);
+    const choices = shuffle([word, ...wrong]);
+
+    document.getElementById('spell-grid').innerHTML = choices.map((c,i)=>`
+        <div class="quiz-choice" id="sc${i}" onclick="answerSpell(${i},'${c.danish}')">
+            <div class="choice-emoji">${c.emoji}</div>
+            <div class="choice-word" style="font-size:20px;font-weight:900;">${c.danish}</div>
+        </div>`).join('');
+
+    setTimeout(()=>speak(word.danish), 600);
+}
+
+function answerSpell(idx, danish) {
+    if (state.spellAnswered) return;
+    state.spellAnswered = true;
+    vibrate(danish === state.spellWord.danish ? 40 : [40,30,40]);
+    const correct = danish === state.spellWord.danish;
+    const el = document.getElementById('sc' + idx);
+
+    if (correct) {
+        el.classList.add('correct'); sfxCorrect(); showConfetti();
+        state.spellCorrect++; state.spellStars++;
+        document.getElementById('spell-correct').textContent = state.spellCorrect;
+        document.getElementById('spell-stars').textContent   = state.spellStars;
+    } else {
+        el.classList.add('wrong'); sfxWrong();
+        document.querySelectorAll('#spell-grid .quiz-choice').forEach(c => {
+            if (c.querySelector('.choice-word')?.textContent === state.spellWord.danish)
+                c.classList.add('correct');
+        });
+    }
+
+    setTimeout(()=>speak(state.spellWord.danish), 300);
+    setTimeout(()=>{ state.spellIdx++; nextSpell(); }, 1600);
+}
+
+/* ══════════════════════════════════════════════
+   MEMORY MATCH
+══════════════════════════════════════════════ */
+
+function startMemTimer() {
+    stopMemTimer();
+    state.memSeconds = 0;
+    document.getElementById('mem-timer').textContent = '0';
+    state.memTimerInterval = setInterval(() => {
+        state.memSeconds++;
+        const el = document.getElementById('mem-timer');
+        if (el) el.textContent = state.memSeconds;
+    }, 1000);
+}
+
+function stopMemTimer() {
+    if (state.memTimerInterval) {
+        clearInterval(state.memTimerInterval);
+        state.memTimerInterval = null;
+    }
+}
+
+function startMemory() {
+    const words = VOCAB[state.category];
+    const pairs = shuffle([...words]).slice(0, Math.min(8, words.length));
+    state.memPairs   = pairs.length;
+    state.memMatched = 0;
+    state.memMoves   = 0;
+    state.memFlipped = [];
+    state.memLocked  = false;
+    state.mode       = 'memory';
+
+    const cards = [];
+    pairs.forEach((w, i) => {
+        cards.push({ uid: i*2,   pairId: i, kind:'word',  content:w.danish, word:w });
+        cards.push({ uid: i*2+1, pairId: i, kind:'emoji', content:w.emoji,  word:w });
+    });
+    state.memCards = shuffle(cards);
+
+    document.getElementById('mem-pairs').textContent   = state.memPairs;
+    document.getElementById('mem-matched').textContent = 0;
+    document.getElementById('mem-moves').textContent   = 0;
+
+    renderMemGrid();
+    showScreen('memory');
+    startMemTimer();
+}
+
+function renderMemGrid() {
+    const n    = state.memCards.length;
+    const cols = n <= 12 ? 3 : 4;
+    const grid = document.getElementById('mem-grid');
+    grid.style.gridTemplateColumns = `repeat(${cols},1fr)`;
+
+    grid.innerHTML = state.memCards.map((c,i)=>`
+        <div class="mem-card" id="mc${i}" onclick="flipMem(${i})">
+            <div class="mem-card-inner">
+                <div class="mem-face">🇩🇰</div>
+                <div class="mem-back ${c.kind==='emoji'?'is-emoji':'is-word'}">${c.content}</div>
+            </div>
+        </div>`).join('');
+}
+
+function flipMem(i) {
+    if (state.memLocked) return;
+    const el = document.getElementById('mc'+i);
+    if (!el || el.classList.contains('flipped') || el.classList.contains('matched')) return;
+    if (state.memFlipped.includes(i)) return;
+
+    sfxFlip();
+    el.classList.add('flipped');
+    state.memFlipped.push(i);
+
+    if (state.memFlipped.length === 2) {
+        state.memMoves++;
+        document.getElementById('mem-moves').textContent = state.memMoves;
+        state.memLocked = true;
+
+        const [a, b] = state.memFlipped;
+        const ca = state.memCards[a], cb = state.memCards[b];
+
+        if (ca.pairId === cb.pairId && ca.kind !== cb.kind) {
+            setTimeout(()=>{
+                document.getElementById('mc'+a).classList.add('matched');
+                document.getElementById('mc'+b).classList.add('matched');
+                state.memMatched++;
+                document.getElementById('mem-matched').textContent = state.memMatched;
+                state.memFlipped = []; state.memLocked = false;
+                sfxCorrect(); vibrate(40);
+                speak(ca.word.danish);
+                if (state.memMatched === state.memPairs) {
+                    stopMemTimer();
+                    setTimeout(()=>showGameResult('memory'), 700);
+                }
+            }, 380);
+        } else {
+            setTimeout(()=>{
+                document.getElementById('mc'+a).classList.remove('flipped');
+                document.getElementById('mc'+b).classList.remove('flipped');
+                state.memFlipped = []; state.memLocked = false;
+                sfxWrong(); vibrate([40,30,40]);
+            }, 900);
+        }
+    }
+}
+
+/* ══════════════════════════════════════════════
+   BUILD A SENTENCE
+══════════════════════════════════════════════ */
+
+const CATEGORY_FRAMES = {
+    animals:    ['Det','er','en'],
+    colors:     ['Den','er'],
+    numbers:    ['Det','er'],
+    food:       ['Jeg','spiser'],
+    family:     ['Det','er'],
+    body:       ['Det','er'],
+    house:      ['Her','er','en'],
+    playground: ['Jeg','vil'],
+    feelings:   ['Jeg','er'],
+    phrases:    ['Jeg','siger'],
+    questions:  [],
+};
+
+const BUILD_LEN = 8;
+
+function startBuildSentence() {
+    const words = VOCAB[state.category];
+    state.buildWords   = shuffle([...words]).slice(0, Math.min(BUILD_LEN, words.length));
+    state.buildIdx     = 0;
+    state.buildCorrect = 0;
+    state.buildStars   = 0;
+    state.mode         = 'build';
+    showScreen('build');
+    nextBuild();
+}
+
+function nextBuild() {
+    if (state.buildIdx >= state.buildWords.length) { showGameResult('build'); return; }
+
+    const word = state.buildWords[state.buildIdx];
+    state.buildWord = word;
+
+    const rawParts = word.danish.trim().split(/\s+/);
+    const frame    = rawParts.length === 1 ? (CATEGORY_FRAMES[state.category] || ['Det','er']) : [];
+    state.buildSentence = [...frame, ...rawParts];
+
+    const n = state.buildSentence.length;
+    state.buildTileOrder = shuffle(Array.from({length:n},(_,i)=>i));
+    state.buildTileUsed  = new Array(n).fill(false);
+    state.buildPlaced    = 0;
+
+    document.getElementById('build-correct-count').textContent = state.buildCorrect;
+    document.getElementById('build-stars').textContent         = state.buildStars;
+    document.getElementById('build-q-num').textContent         = state.buildIdx + 1;
+    document.getElementById('build-q-total').textContent       = state.buildWords.length;
+    document.getElementById('build-emoji').textContent         = word.emoji;
+    document.getElementById('build-english').textContent       = word.english;
+
+    renderBuildSlots();
+    renderBuildTiles();
+    setTimeout(()=>speak(word.danish), 450);
+}
+
+function renderBuildSlots() {
+    document.getElementById('build-slots').innerHTML =
+        state.buildSentence.map((w, i) => {
+            const filled = i < state.buildPlaced;
+            return `<div class="build-slot ${filled?'filled':''}" id="bslot${i}">${filled?w:''}</div>`;
+        }).join('');
+}
+
+function renderBuildTiles() {
+    document.getElementById('build-tiles').innerHTML =
+        state.buildTileOrder.map((sentIdx, tilePos) => {
+            if (state.buildTileUsed[tilePos]) return '';
+            return `<button class="build-tile" id="btile${tilePos}" onclick="tapBuildTile(${tilePos})">${state.buildSentence[sentIdx]}</button>`;
+        }).join('');
+}
+
+function tapBuildTile(tilePos) {
+    const sentIdx  = state.buildTileOrder[tilePos];
+    const tapped   = state.buildSentence[sentIdx];
+    const expected = state.buildSentence[state.buildPlaced];
+
+    if (tapped === expected) {
+        sfxCorrect(); vibrate(30);
+        state.buildTileUsed[tilePos] = true;
+
+        const slot = document.getElementById('bslot' + state.buildPlaced);
+        if (slot) { slot.textContent = tapped; slot.classList.add('filled'); }
+        state.buildPlaced++;
+
+        const tile = document.getElementById('btile' + tilePos);
+        if (tile) { tile.classList.add('gone'); setTimeout(()=>tile.remove(), 160); }
+
+        if (state.buildPlaced === state.buildSentence.length) {
+            state.buildCorrect++;
+            state.buildStars++;
+            document.getElementById('build-correct-count').textContent = state.buildCorrect;
+            document.getElementById('build-stars').textContent         = state.buildStars;
+            addStars(state.category, 1);
+            sfxLevelUp(); vibrate(80);
+            showConfetti();
+            speak(state.buildWord.danish);
+            setTimeout(()=>{ state.buildIdx++; nextBuild(); }, 1700);
+        }
+    } else {
+        sfxWrong(); vibrate([40,30,40]);
+        const tile = document.getElementById('btile' + tilePos);
+        if (tile) { tile.classList.add('wrong'); setTimeout(()=>tile.classList.remove('wrong'), 380); }
+    }
+}
+
+function speakBuildWord() { speak(state.buildWord.danish); }
+
+/* ══════════════════════════════════════════════
+   REPEAT (SAY IT) MODE
+══════════════════════════════════════════════ */
+
+const REP_LEN = 10;
+
+function startRepeat() {
+    const words = VOCAB[state.category];
+    state.repWords = shuffle([...words]).slice(0, Math.min(REP_LEN, words.length));
+    state.repIdx   = 0;
+    state.repStars = 0;
+    state.mode     = 'repeat';
+    renderRepeat();
+    showScreen('repeat');
+    setTimeout(()=>speak(state.repWords[0].danish), 550);
+}
+
+function renderRepeat() {
+    const w = state.repWords[state.repIdx];
+    document.getElementById('rep-emoji').textContent   = w.emoji;
+    document.getElementById('rep-english').textContent = w.english;
+    document.getElementById('rep-danish').textContent  = w.danish;
+    document.getElementById('rep-counter').textContent = `${state.repIdx+1} / ${state.repWords.length}`;
+    document.getElementById('rep-prog-fill').style.width =
+        ((state.repIdx+1)/state.repWords.length*100)+'%';
+    document.getElementById('rep-star-count').textContent = totalStars();
+}
+
+function speakRepeat()        { speak(state.repWords[state.repIdx].danish); }
+function speakRepeatSlow()    { speak(state.repWords[state.repIdx].danish, 0.55); }
+function speakRepeatEnglish() { speakEnglish(state.repWords[state.repIdx].english); }
+
+function confirmRepeat() {
+    sfxCorrect(); showConfetti(); vibrate(40);
+    addStars(state.category, 1);
+    state.repStars++;
+
+    if (state.repIdx < state.repWords.length - 1) {
+        state.repIdx++;
+        renderRepeat();
+        setTimeout(()=>speak(state.repWords[state.repIdx].danish), 350);
+    } else {
+        showGameResult('repeat');
+    }
+}
+
+/* ══════════════════════════════════════════════
+   TRANSLATE QUIZ
+══════════════════════════════════════════════ */
+
+const TR_LEN = 10;
+
+function startTranslateQuiz() {
+    const words = VOCAB[state.category];
+    state.trWords   = shuffle([...words]).slice(0, Math.min(TR_LEN, words.length));
+    state.trIdx     = 0;
+    state.trCorrect = 0;
+    state.trStars   = 0;
+    state.mode      = 'translate';
+    showScreen('translate');
+    nextTranslate();
+}
+
+function nextTranslate() {
+    if (state.trIdx >= state.trWords.length) { showGameResult('translate'); return; }
+    state.trAnswered = false;
+    const word = state.trWords[state.trIdx];
+    state.trWord = word;
+
+    document.getElementById('tr-correct').textContent  = state.trCorrect;
+    document.getElementById('tr-stars').textContent    = state.trStars;
+    document.getElementById('tr-q-num').textContent    = state.trIdx + 1;
+    document.getElementById('tr-q-total').textContent  = state.trWords.length;
+    document.getElementById('tr-emoji').textContent    = word.emoji;
+    document.getElementById('tr-danish').textContent   = word.danish;
+
+    const all     = VOCAB[state.category];
+    const wrong   = shuffle(all.filter(w=>w.danish!==word.danish)).slice(0,2);
+    const choices = shuffle([word, ...wrong]);
+    const letters = ['A','B','C'];
+
+    document.getElementById('tr-choices').innerHTML = choices.map((c,i)=>`
+        <div class="tr-choice" id="trc${i}" onclick="answerTranslate(${i},'${c.danish}')">
+            <span class="tr-choice-letter">${letters[i]}</span>
+            ${c.emoji} ${c.english}
+        </div>`).join('');
+
+    setTimeout(()=>speak(word.danish), 450);
+}
+
+function speakTranslate() { if (state.trWord) speak(state.trWord.danish); }
+
+function answerTranslate(idx, danish) {
+    if (state.trAnswered) return;
+    state.trAnswered = true;
+    vibrate(danish === state.trWord.danish ? 40 : [40,30,40]);
+    const correct = danish === state.trWord.danish;
+    const el = document.getElementById('trc' + idx);
+
+    if (correct) {
+        el.classList.add('correct'); sfxCorrect(); showConfetti();
+        state.trCorrect++; state.trStars++;
+        document.getElementById('tr-correct').textContent = state.trCorrect;
+        document.getElementById('tr-stars').textContent   = state.trStars;
+    } else {
+        el.classList.add('wrong'); sfxWrong();
+        document.querySelectorAll('.tr-choice').forEach(c => {
+            if (c.textContent.includes(state.trWord.english)) c.classList.add('correct');
+        });
+    }
+
+    setTimeout(()=>speak(state.trWord.danish), 300);
+    setTimeout(()=>{ state.trIdx++; nextTranslate(); }, 1600);
+}
+
+/* ══════════════════════════════════════════════
+   GAME RESULTS
+══════════════════════════════════════════════ */
+
+function showGameResult(gameType) {
+    let trophy, title, starsEarned, scoreText;
+
+    if (gameType === 'quiz' || gameType === 'spelling' || gameType === 'translate') {
+        const correct = gameType==='quiz'     ? state.quizCorrect
+                      : gameType==='spelling' ? state.spellCorrect
+                      :                         state.trCorrect;
+        const total   = gameType==='quiz'     ? state.quizWords.length
+                      : gameType==='spelling' ? state.spellWords.length
+                      :                         state.trWords.length;
+        const pct = correct / total;
+        if      (pct===1)  { trophy='🏆'; title='Perfect!';    starsEarned=3; }
+        else if (pct>=0.7) { trophy='🥇'; title='Great job!';  starsEarned=2; }
+        else if (pct>=0.5) { trophy='🥈'; title='Good try!';   starsEarned=1; }
+        else               { trophy='💪'; title='Keep going!'; starsEarned=1; }
+        scoreText = `${correct} / ${total} correct`;
+    } else if (gameType === 'repeat') {
+        trophy='🌟'; title='Well said!'; starsEarned=2;
+        scoreText = `${state.repWords.length} words practised`;
+    } else if (gameType === 'build') {
+        const pct = state.buildCorrect / state.buildWords.length;
+        if      (pct===1)  { trophy='🏆'; title='Perfect builder!'; starsEarned=3; }
+        else if (pct>=0.7) { trophy='🥇'; title='Great job!';       starsEarned=2; }
+        else               { trophy='💪'; title='Keep building!';   starsEarned=1; }
+        scoreText = `${state.buildCorrect} / ${state.buildWords.length} sentences built`;
+    } else {
+        const ratio = (state.memPairs * 2) / state.memMoves;
+        if      (ratio>=0.8) { trophy='🏆'; title='Amazing!';   starsEarned=3; }
+        else if (ratio>=0.5) { trophy='🥇'; title='Well done!'; starsEarned=2; }
+        else                 { trophy='💪'; title='Good try!';  starsEarned=1; }
+        scoreText = `${state.memMoves} moves · ${state.memSeconds}s`;
+    }
+
+    addStars(state.category, starsEarned);
+
+    document.getElementById('result-trophy').textContent = trophy;
+    document.getElementById('result-title').textContent  = title;
+    document.getElementById('result-stars').textContent  = '⭐'.repeat(starsEarned);
+    document.getElementById('result-score').textContent  = scoreText;
+    document.getElementById('result-level').textContent  = getLevelLabel(totalStars());
+
+    showScreen('result');
+    sfxLevelUp(); vibrate(100);
+    showConfetti();
+}
+
+function restartGame() {
+    if      (state.mode==='quiz')      startQuiz();
+    else if (state.mode==='memory')    startMemory();
+    else if (state.mode==='spelling')  startSpelling();
+    else if (state.mode==='repeat')    startRepeat();
+    else if (state.mode==='translate') startTranslateQuiz();
+    else if (state.mode==='build')     startBuildSentence();
+    else    showScreen('game-select');
+}
+
+/* ══════════════════════════════════════════════
+   PROGRESS
+══════════════════════════════════════════════ */
+
+function renderProgress() {
+    const total = totalStars();
+    document.getElementById('prog-total').textContent      = total;
+    document.getElementById('prog-level-badge').textContent = getLevelLabel(total);
+
+    const MAX_DISPLAY = 25;
+    document.getElementById('prog-list').innerHTML = CATEGORIES.map(c=>{
+        const s   = catStars(c.id);
+        const pct = Math.min((s/MAX_DISPLAY)*100, 100);
+        const lbl = s > 0 ? `${s} ⭐` : '—';
+        return `
+          <div class="prog-item">
+            <div class="prog-cat-emoji">${c.emoji}</div>
+            <div class="prog-info">
+              <div class="prog-name">${c.name} — ${c.danish}</div>
+              <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+            </div>
+            <div class="prog-count">${lbl}</div>
+          </div>`;
+    }).join('');
+}
+
+function confirmReset() {
+    if (confirm('Reset all your stars? This cannot be undone!')) {
+        state.stars  = {};
+        state.streak = 0;
+        saveSaved();
+        renderProgress();
+        refreshStarUI();
+        showToast('Progress reset! Time to earn those stars back! 💪');
+    }
+}
+
+/* ══════════════════════════════════════════════
+   EFFECTS
+══════════════════════════════════════════════ */
+
+let toastTimer = null;
+function showToast(msg, ms=2200) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove('show'), ms);
+}
+
+function showConfetti() {
+    const colors = ['#FF6B6B','#4ECDC4','#FFE66D','#a29bfe','#fd79a8','#55efc4','#fdcb6e','#ff7675'];
+    const shapes = ['50%', '3px', '50%', '0'];
+    for (let i = 0; i < 36; i++) {
+        setTimeout(()=>{
+            const p = document.createElement('div');
+            p.className = 'confetti';
+            const size = 7 + Math.random() * 10;
+            p.style.cssText = `
+                left: ${Math.random()*100}vw; top: -20px;
+                width: ${size}px; height: ${size}px;
+                background: ${colors[Math.floor(Math.random()*colors.length)]};
+                border-radius: ${shapes[Math.floor(Math.random()*shapes.length)]};
+                animation-duration: ${1.2+Math.random()*1.4}s;
+                animation-delay: ${Math.random()*0.5}s;`;
+            document.body.appendChild(p);
+            setTimeout(()=>p.remove(), 2900);
+        }, i * 30);
+    }
+}
+
+/* ══════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════ */
+
+function shuffle(a) {
+    const arr = [...a];
+    for (let i = arr.length-1; i > 0; i--) {
+        const j = Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]] = [arr[j],arr[i]];
+    }
+    return arr;
+}
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+loadSaved();
+refreshStarUI();
+</script>
+</body>
+</html>
